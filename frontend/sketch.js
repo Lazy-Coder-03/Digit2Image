@@ -89,22 +89,71 @@ async function generateImage() {
     return; // Exit the function
   }
 
-  const response = await fetch(`http://localhost:8000/generate/${digit}`); // Adjust URL as needed
-  const data = await response.json();
+  const remoteURL = `https://digit2image-backend.onrender.com/generate/${digit}`;
+  const localURL = `http://localhost:8000/generate/${digit}`;
 
-  // Check if new images are received
-  if (data.images && data.images.length > 0) {
-    console.log("New images received:", data.images.length);
-    storeImages(data.images); // Store new images
-    // Set the current image index to the first new image
-    if (currentImageIndex === -1) {
-      currentImageIndex = 0; // Start displaying the new images
-      timer = 0; // Reset timer
-      fadeOutAmount = 255; // Start fade from full visibility
-      fadeInAmount = 0; // Start with the current image invisible
+  try {
+    const response = await fetch(remoteURL); // Try fetching from the remote server
+
+    // Check if the response is not okay (status not in the range 200-299)
+    if (!response.ok) {
+      throw new Error(`Remote server responded with status ${response.status}`);
     }
-  } else {
-    console.error("No images returned for the specified digit.");
+
+    const data = await response.json(); // Parse the response as JSON
+
+    // Check if new images are received
+    if (data.images && data.images.length > 0) {
+      console.log("New images received from remote server:", data.images.length);
+      storeImages(data.images); // Store new images
+      // Set the current image index to the first new image
+      if (currentImageIndex === -1) {
+        currentImageIndex = 0; // Start displaying the new images
+        timer = 0; // Reset timer
+        fadeOutAmount = 255; // Start fade from full visibility
+        fadeInAmount = 0; // Start with the current image invisible
+      }
+    } else {
+      console.error("No images returned for the specified digit from remote server.");
+      // If no images, try local server
+      await fetchFromLocalServer(localURL);
+    }
+  } catch (error) {
+    console.error("Error fetching from remote server:", error.message);
+    // If an error occurs, try local server
+    await fetchFromLocalServer(localURL);
+  }
+}
+
+// Helper function to fetch images from the local server
+async function fetchFromLocalServer(localURL) {
+  try {
+    const response = await fetch(localURL); // Fetch from the local server
+
+    // Check if the response is not okay
+    if (!response.ok) {
+      throw new Error(`Local server responded with status ${response.status}`);
+    }
+
+    const data = await response.json(); // Parse the response as JSON
+
+    // Check if new images are received
+    if (data.images && data.images.length > 0) {
+      console.log("New images received from local server:", data.images.length);
+      storeImages(data.images); // Store new images
+      // Set the current image index to the first new image
+      if (currentImageIndex === -1) {
+        currentImageIndex = 0; // Start displaying the new images
+        timer = 0; // Reset timer
+        fadeOutAmount = 255; // Start fade from full visibility
+        fadeInAmount = 0; // Start with the current image invisible
+      }
+    } else {
+      console.error("No images returned for the specified digit from local server.");
+    }
+  } catch (error) {
+    console.error("Error fetching from local server:", error.message);
+    showMessage("Failed to fetch images from both servers."); // Notify the user
   }
 }
 
