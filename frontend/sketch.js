@@ -83,6 +83,12 @@ function applyFadeEffects() {
 // Function to fetch and store generated images
 async function generateImage() {
   const digit = select('#digitInput').value(); // Get the digit from input
+  // Validate input
+  if (digit < 0 || digit > 9) {
+    showMessage("Invalid input. Please enter a digit between 0 and 9."); // Show message for invalid input
+    return; // Exit the function
+  }
+
   const response = await fetch(`http://localhost:8000/generate/${digit}`); // Adjust URL as needed
   const data = await response.json();
 
@@ -100,6 +106,18 @@ async function generateImage() {
   } else {
     console.error("No images returned for the specified digit.");
   }
+}
+
+// Function to show the message box
+function showMessage(message) {
+  const messageBox = select('#messageBox');
+  messageBox.html(message);
+  messageBox.style('display', 'block'); // Show the message box
+
+  // Hide the message box after 3 seconds
+  setTimeout(() => {
+    messageBox.style('display', 'none'); // Hide the message box
+  }, 3000);
 }
 
 // Store images into the images array
